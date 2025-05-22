@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { createDatabaseAdapter } from '@/lib/db-adapter';
+
 import { toast } from '@/hooks/use-toast';
 
 interface Category {
@@ -40,39 +40,42 @@ export default function NavigationManager() {
     description: '',
   });
 
-  const dbAdapter = createDatabaseAdapter();
-
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
     try {
-      await dbAdapter.connect();
-      const [categoriesData, linksData] = await Promise.all([
-        dbAdapter.getCategories(),
-        dbAdapter.getLinks()
-      ]);
-      setCategories(categoriesData);
-      setLinks(linksData);
+      const response = await fetch('/api/navigation');
+      if (!response.ok) {
+        throw new Error('Failed to fetch data');
+      }
+      const data = await response.json();
+      setCategories(data.categories);
+      setLinks(data.links);
     } catch (error) {
       toast({
         title: '错误',
         description: '加载数据失败',
         variant: 'destructive',
       });
-    } finally {
-      await dbAdapter.disconnect();
     }
   };
 
   const handleAddCategory = async () => {
     try {
-      await dbAdapter.connect();
-      const category = await dbAdapter.addCategory({
-        ...newCategory,
-        createdDate: new Date().toISOString(),
+      const response = await fetch('/api/navigation/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newCategory,
+          createdDate: new Date().toISOString(),
+        }),
       });
+      if (!response.ok) {
+        throw new Error('Failed to add category');
+      }
+      const category = await response.json();
       setCategories([...categories, category]);
       setNewCategory({ name: '', slug: '', icon: '' });
       toast({
@@ -85,18 +88,23 @@ export default function NavigationManager() {
         description: '添加分类失败',
         variant: 'destructive',
       });
-    } finally {
-      await dbAdapter.disconnect();
     }
   };
 
   const handleAddLink = async () => {
     try {
-      await dbAdapter.connect();
-      const link = await dbAdapter.addLink({
-        ...newLink,
-        createdDate: new Date().toISOString(),
+      const response = await fetch('/api/navigation/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newLink,
+          createdDate: new Date().toISOString(),
+        }),
       });
+      if (!response.ok) {
+        throw new Error('Failed to add link');
+      }
+      const link = await response.json();
       setLinks([...links, link]);
       setNewLink({
         title: '',
@@ -114,15 +122,17 @@ export default function NavigationManager() {
         description: '添加链接失败',
         variant: 'destructive',
       });
-    } finally {
-      await dbAdapter.disconnect();
     }
   };
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      await dbAdapter.connect();
-      await dbAdapter.deleteCategory(id);
+      const response = await fetch(`/api/navigation/categories?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete category');
+      }
       setCategories(categories.filter(c => c.id !== id));
       toast({
         title: '成功',
@@ -134,15 +144,17 @@ export default function NavigationManager() {
         description: '删除分类失败',
         variant: 'destructive',
       });
-    } finally {
-      await dbAdapter.disconnect();
     }
   };
 
   const handleDeleteLink = async (id: string) => {
     try {
-      await dbAdapter.connect();
-      await dbAdapter.deleteLink(id);
+      const response = await fetch(`/api/navigation/links?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete link');
+      }
       setLinks(links.filter(l => l.id !== id));
       toast({
         title: '成功',
@@ -154,8 +166,6 @@ export default function NavigationManager() {
         description: '删除链接失败',
         variant: 'destructive',
       });
-    } finally {
-      await dbAdapter.disconnect();
     }
   };
 

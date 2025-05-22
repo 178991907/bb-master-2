@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { createDatabaseAdapter } from '@/lib/db-adapter';
 import { toast } from '@/hooks/use-toast';
 
 interface Category {
@@ -33,31 +32,26 @@ export default function NavigationHome() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const dbAdapter = createDatabaseAdapter();
-
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const response = await fetch('/api/navigation');
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        const data = await response.json();
+        setCategories(data.categories);
+        setLinks(data.links);
+      } catch (error) {
+        toast({
+          title: '错误',
+          description: '加载数据失败',
+          variant: 'destructive',
+        });
+      }
+    };
     loadData();
   }, []);
-
-  const loadData = async () => {
-    try {
-      await dbAdapter.connect();
-      const [categoriesData, linksData] = await Promise.all([
-        dbAdapter.getCategories(),
-        dbAdapter.getLinks()
-      ]);
-      setCategories(categoriesData);
-      setLinks(linksData);
-    } catch (error) {
-      toast({
-        title: '错误',
-        description: '加载数据失败',
-        variant: 'destructive',
-      });
-    } finally {
-      await dbAdapter.disconnect();
-    }
-  };
 
   const filteredLinks = links.filter(link => {
     const matchesSearch = searchTerm === '' ||

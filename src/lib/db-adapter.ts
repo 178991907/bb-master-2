@@ -17,22 +17,22 @@ interface DatabaseAdapter {
 interface Category {
   id: string;
   name: string;
-  slug: string;
-  createdDate: string;
-  icon?: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  category: string;
 }
 
 interface LinkItem {
   id: string;
   title: string;
   url: string;
-  categoryId: string;
-  categoryName?: string;
-  createdDate: string;
-  imageUrl?: string;
-  aiHint?: string;
-  description?: string;
-  faviconUrl?: string;
+  description: string;
+  website_message: string;
+  created_at: string;
+  updated_at: string;
+  category: string;
+  border_left: string;
 }
 
 class PostgresAdapter implements DatabaseAdapter {
@@ -61,7 +61,7 @@ class PostgresAdapter implements DatabaseAdapter {
   async getCategories(): Promise<Category[]> {
     if (!this.pool) throw new Error('Database not connected');
     const result = await this.pool.query<Category>(
-      'SELECT id, name, slug, "createdDate", icon FROM categories;'
+      'SELECT id, name, description, created_at, updated_at, category FROM categories;'
     );
     return result.rows;
   }
@@ -69,9 +69,7 @@ class PostgresAdapter implements DatabaseAdapter {
   async getLinks(): Promise<LinkItem[]> {
     if (!this.pool) throw new Error('Database not connected');
     const result = await this.pool.query<LinkItem>(
-      'SELECT l.id, l.title, l.url, l.categoryId, c.name AS "categoryName", ' +
-      'l."createdDate", l."imageUrl", l."aiHint", l.description, l."faviconUrl" ' +
-      'FROM links l JOIN categories c ON l.categoryId = c.id'
+      'SELECT id, title, url, description, website_message, created_at, updated_at, category, border_left FROM links'
     );
     return result.rows;
   }
@@ -79,8 +77,8 @@ class PostgresAdapter implements DatabaseAdapter {
   async addCategory(category: Omit<Category, 'id'>): Promise<Category> {
     if (!this.pool) throw new Error('Database not connected');
     const result = await this.pool.query<Category>(
-      'INSERT INTO categories (name, slug, "createdDate", icon) VALUES ($1, $2, $3, $4) RETURNING *',
-      [category.name, category.slug, category.createdDate, category.icon]
+      'INSERT INTO categories (name, description, created_at, updated_at, category) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [category.name, category.description, category.created_at, category.updated_at, category.category]
     );
     return result.rows[0];
   }
@@ -112,9 +110,9 @@ class PostgresAdapter implements DatabaseAdapter {
   async addLink(link: Omit<LinkItem, 'id'>): Promise<LinkItem> {
     if (!this.pool) throw new Error('Database not connected');
     const result = await this.pool.query<LinkItem>(
-      'INSERT INTO links (title, url, "categoryId", "createdDate", "imageUrl", "aiHint", description, "faviconUrl") ' +
+      'INSERT INTO links (title, url, description, website_message, created_at, updated_at, category, border_left) ' +
       'VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [link.title, link.url, link.categoryId, link.createdDate, link.imageUrl, link.aiHint, link.description, link.faviconUrl]
+      [link.title, link.url, link.description, link.website_message, link.created_at, link.updated_at, link.category, link.border_left]
     );
     return result.rows[0];
   }
@@ -173,25 +171,7 @@ class MongoAdapter implements DatabaseAdapter {
 
   async getLinks(): Promise<LinkItem[]> {
     if (!this.db) throw new Error('Database not connected');
-    const links = await this.db.collection<LinkItem>('links').aggregate([
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: 'id',
-          as: 'category'
-        }
-      },
-      {
-        $unwind: '$category'
-      },
-      {
-        $addFields: {
-          categoryName: '$category.name'
-        }
-      }
-    ]).toArray();
-    return links;
+    return await this.db.collection<LinkItem>('links').find().toArray();
   }
 
   async addCategory(category: Omit<Category, 'id'>): Promise<Category> {

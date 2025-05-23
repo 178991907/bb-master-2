@@ -2,14 +2,14 @@
 const { Client } = require('pg');
 
 async function testDbConnection() {
-  const databaseUrl = process.env.NEXT_PUBLIC_DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL;
 
-  console.log('Test: Checking NEXT_PUBLIC_DATABASE_URL...');
-  if (!databaseUrl) {
-    console.error('Test Error: NEXT_PUBLIC_DATABASE_URL is not set.');
-    return;
-  }
-  console.log('Test: NEXT_PUBLIC_DATABASE_URL obtained.'); // Avoid logging the actual URL for security
+console.log('Test: Checking DATABASE_URL...');
+if (!databaseUrl) {
+  console.error('Test Error: DATABASE_URL is not set.');
+  process.exit(1);
+}
+console.log('Test: DATABASE_URL obtained.'); // Avoid logging the actual URL for security
 
   console.log('Test: Attempting to connect to database...');
   const client = new Client({

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     
     // 验证必要字段
-    if (!data.title || !data.url || !data.category) {
+    if (!data.title || !data.url || !data.categoryId) {
       return NextResponse.json(
         { error: '标题、URL和分类是必填项' },
         { status: 400 }
@@ -32,12 +32,12 @@ export async function POST(request: NextRequest) {
     const link: Omit<LinkItem, 'id'> = {
       title: data.title,
       url: data.url,
+      categoryId: data.categoryId,
+      createdDate: new Date(),
+      imageUrl: data.imageUrl || '',
+      aiHint: data.aiHint || '',
       description: data.description || '',
-      website_message: data.website_message || '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      category: data.category,
-      border_left: data.border_left || ''
+      faviconUrl: data.faviconUrl || ''
     };
 
     const newLink = await db.addLink(link);

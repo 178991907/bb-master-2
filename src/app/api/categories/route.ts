@@ -22,17 +22,17 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     
     // 验证必要字段
-    if (!data.name || !data.slug) {
+    if (!data.name) {
       return NextResponse.json(
-        { error: '名称和标识符是必填项' },
+        { error: '名称是必填项' },
         { status: 400 }
       );
     }
 
     const category: Omit<Category, 'id'> = {
       name: data.name,
-      slug: data.slug,
-      createdDate: new Date().toISOString(),
+      slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      createdDate: new Date(),
       icon: data.icon || ''
     };
 

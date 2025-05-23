@@ -126,12 +126,12 @@ export function getStorage(): Storage {
 
   console.log('Storage System: Initializing storage instance...');
 
-  const pgUrl = process.env.NEXT_PUBLIC_DATABASE_URL;
+  const pgUrl = process.env.DATABASE_URL;
   const mysqlUrl = process.env.NEXT_PUBLIC_MYSQL_URL;
   const mongoUrl = process.env.NEXT_PUBLIC_MONGODB_URL;
 
   if (pgUrl) {
-    console.log("Storage System: PostgreSQL URL (NEXT_PUBLIC_DATABASE_URL) found.");
+    console.log("Storage System: PostgreSQL URL (DATABASE_URL) found.");
     try {
       storageInstance = new CloudDatabaseStorage(pgUrl, "PostgreSQL");
       console.log("Storage System: CloudDatabaseStorage (PostgreSQL) initialized.");

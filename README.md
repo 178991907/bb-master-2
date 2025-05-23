@@ -43,7 +43,7 @@ This project is a Next.js application built with TypeScript, featuring an admin 
 
 本项目通过环境变量来配置敏感信息和外部服务。主要使用的环境变量包括：
 
--   **`NEXT_PUBLIC_DATABASE_URL`**: 用于配置和连接云数据库。你需要将你的数据库连接字符串赋值给这个变量。这个变量应该在项目的 `.env` 文件中设置，并在部署平台 (如 Vercel) 的环境变量设置中配置。
+-   **`DATABASE_URL`**: 用于配置和连接云数据库。你需要将你的数据库连接字符串赋值给这个变量。这个变量应该在项目的 `.env` 文件中设置，并在部署平台 (如 Vercel) 的环境变量设置中配置。
 -   **其他可能的 API 变量**: 用于访问其他外部服务或 API 的密钥和配置信息。(请根据实际使用的服务填写)
 
 在代码中，你可以通过 `process.env.YOUR_VARIABLE_NAME` 的方式访问这些环境变量。建议在 `.env` 文件中管理这些变量，并在应用程序启动时加载它们。

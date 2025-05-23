@@ -38,41 +38,88 @@ export default function AdminCategoriesPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedCategories = localStorage.getItem(LOCAL_STORAGE_CATEGORIES_KEY);
-    if (storedCategories) {
+    async function fetchCategories() {
       try {
-        setCategories(JSON.parse(storedCategories));
+        const response = await fetch('/api/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        setCategories(data);
       } catch (e) {
-        console.error("Failed to parse categories from localStorage:", e);
-        // Fallback to initial mock data and reset localStorage
-        setCategories(initialMockCategories);
-        localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(initialMockCategories));
+        console.error("Failed to fetch categories:", e);
+        setError('Failed to load categories. Please try again later.');
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      // Initialize with mock data if nothing is in localStorage
-      setCategories(initialMockCategories);
-      localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(initialMockCategories));
     }
-    setIsLoading(false);
+    fetchCategories();
   }, []);
 
-  const handleEdit = (categoryId: string) => {
-    router.push(`/admin/categories/edit/${categoryId}`);
-  };
-
-  const handleDelete = (categoryId: string) => {
-    if (window.confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-      const updatedCategories = categories.filter(category => category.id !== categoryId);
-      setCategories(updatedCategories);
-      localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(updatedCategories));
-      // In a real app, also delete associated links or handle them as per requirements
-      alert('Category deleted successfully (mock)!');
+  const handleEdit = async (categoryId: string, newName: string) => {
+    try {
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!response.ok) throw new Error('Failed to update category');
+      
+      setCategories(prev => prev.map(category =>
+        category.id === categoryId ? { ...category, name: newName } : category
+      ));
+      alert('Category updated successfully!');
+    } catch (e) {
+      console.error('Failed to update category:', e);
+      alert('Failed to update category. Please try again.');
     }
   };
 
-  const handleReorder = () => {
-    // Placeholder for reorder functionality
-    alert('Reorder categories (mock - not implemented with localStorage persistence)');
+  const handleDelete = async (categoryId: string) => {
+    if (window.confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+      try {
+        const response = await fetch(`/api/categories/${categoryId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete category');
+        
+        setCategories(prev => prev.filter(category => category.id !== categoryId));
+        alert('Category deleted successfully!');
+      } catch (e) {
+        console.error('Failed to delete category:', e);
+        alert('Failed to delete category. Please try again.');
+      }
+    }
+  };
+
+  const handleReorder = async (startIndex: number, endIndex: number) => {
+    const result = Array.from(categories);
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+
+    // Update order property for each category
+    const updatedCategories = result.map((category, index) => ({
+      ...category,
+      order: index,
+    }));
+
+    try {
+      const response = await fetch('/api/categories/reorder', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedCategories),
+      });
+      if (!response.ok) throw new Error('Failed to reorder categories');
+      
+      setCategories(updatedCategories);
+    } catch (e) {
+      console.error('Failed to reorder categories:', e);
+      alert('Failed to reorder categories. Please try again.');
+      // Revert to original order
+      setCategories(prev => [...prev]);
+    }
   };
 
   if (isLoading) {

@@ -87,35 +87,37 @@ export default function CreateLinkPage() {
         }
     }
 
-
     const selectedCategory = availableCategories.find(cat => cat.id === categoryId);
 
-    const newLink: LinkItem = {
-      id: Date.now().toString(),
+    const newLink = {
       title,
       url,
       description,
       faviconUrl,
       categoryId,
       categoryName: selectedCategory?.name || 'Unknown Category',
-      createdDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      imageUrl: `https://placehold.co/120x80.png`, 
-      aiHint: title.toLowerCase().split(' ').slice(0,2).join(' ') || 'link icon',
     };
 
     try {
-      const storedLinks = localStorage.getItem(LOCAL_STORAGE_LINKS_KEY);
-      const currentLinks: LinkItem[] = storedLinks ? JSON.parse(storedLinks) : [];
-      const updatedLinks = [...currentLinks, newLink];
-      localStorage.setItem(LOCAL_STORAGE_LINKS_KEY, JSON.stringify(updatedLinks));
+      const response = await fetch('/api/links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newLink),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create link');
+      }
 
       setIsLoading(false);
-      alert('Link created successfully!'); 
+      alert('Link created successfully!');
       router.push('/admin/links');
-    } catch (e) {
-      setError('Failed to save link. Please try again.');
+    } catch (error) {
+      setError('Failed to create link');
       setIsLoading(false);
-      console.error("Failed to save link to localStorage", e);
+      console.error('Error creating link:', error);
     }
   };
 

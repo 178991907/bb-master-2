@@ -43,94 +43,50 @@ export default function AdminLinksPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let parsedCategories: Category[] = initialMockCategories;
-    const storedCategories = localStorage.getItem(LOCAL_STORAGE_CATEGORIES_KEY);
-    if (storedCategories) {
+    async function fetchData() {
       try {
-        parsedCategories = JSON.parse(storedCategories);
-      } catch (e) {
-        console.error("解析localStorage中的categories数据失败 (links page):", e);
-        localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(initialMockCategories));
-      }
-    } else {
-       localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(initialMockCategories));
-    }
-    const catMap = new Map(parsedCategories.map(cat => [cat.id, cat.name]));
-    setCategoriesMap(catMap);
+        const [linksResponse, categoriesResponse] = await Promise.all([
+          fetch('/api/links'),
+          fetch('/api/categories')
+        ]);
 
-    const storedLinks = localStorage.getItem(LOCAL_STORAGE_LINKS_KEY);
-    if (storedLinks) {
-      try {
-        const parsedLinksList: LinkItem[] = JSON.parse(storedLinks);
-        const updatedLinks = parsedLinksList.map(link => ({
-          ...link,
-          categoryName: catMap.get(link.categoryId) || '未知分类',
-        }));
-        setLinks(updatedLinks);
+        if (!linksResponse.ok) throw new Error('Failed to fetch links');
+        if (!categoriesResponse.ok) throw new Error('Failed to fetch categories');
+
+        const [linksData, categoriesData] = await Promise.all([
+          linksResponse.json(),
+          categoriesResponse.json()
+        ]);
+
+        setLinks(linksData);
+        setCategories(categoriesData);
       } catch (e) {
-         console.error("解析localStorage中的links数据失败:", e);
-         const updatedInitialLinks = initialMockLinks.map(link => ({
-          ...link,
-          categoryName: catMap.get(link.categoryId) || link.categoryName || '未知分类',
-        }));
-        setLinks(updatedInitialLinks);
-        localStorage.setItem(LOCAL_STORAGE_LINKS_KEY, JSON.stringify(updatedInitialLinks));
+        console.error("Failed to fetch data:", e);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      const updatedInitialLinks = initialMockLinks.map(link => ({
-        ...link,
-        categoryName: catMap.get(link.categoryId) || link.categoryName || '未知分类',
-      }));
-      setLinks(updatedInitialLinks);
-      localStorage.setItem(LOCAL_STORAGE_LINKS_KEY, JSON.stringify(updatedInitialLinks));
     }
-    setIsLoading(false);
+    fetchData();
   }, []);
   
   const handleEdit = (linkId: string) => {
     router.push(`/admin/links/edit/${linkId}`);
   };
 
-  const handleDelete = (linkId: string) => {
-    if (!linkId) {
-      toast({
-        title: "删除错误",
-        description: "无法删除链接：链接ID缺失。",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const linkToDelete = links.find(link => link.id === linkId);
-
-    if (!linkToDelete) {
-      toast({
-        title: "错误",
-        description: "未找到要删除的链接。列表可能已被其他操作更新或ID不正确。",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (window.confirm(`您确定要删除链接 "${linkToDelete.title}" 吗？此操作无法撤销。`)) {
+  const handleDelete = async (linkId: string) => {
+    if (window.confirm('Are you sure you want to delete this link? This action cannot be undone.')) {
       try {
-        setLinks(prevLinks => {
-          const updatedLinks = prevLinks.filter(link => link.id !== linkId);
-          localStorage.setItem(LOCAL_STORAGE_LINKS_KEY, JSON.stringify(updatedLinks));
-          return updatedLinks;
+        const response = await fetch(`/api/links/${linkId}`, {
+          method: 'DELETE',
         });
-
-        toast({
-          title: "链接已删除",
-          description: `链接 "${linkToDelete.title}" 已成功删除。`,
-        });
-      } catch (error) {
-        console.error('删除链接过程中发生错误:', error);
-        toast({
-          title: "删除失败",
-          description: "尝试删除链接时发生错误。",
-          variant: "destructive",
-        });
+        if (!response.ok) throw new Error('Failed to delete link');
+        
+        setLinks(prev => prev.filter(link => link.id !== linkId));
+        toast.success('Link deleted successfully!');
+      } catch (e) {
+        console.error('Failed to delete link:', e);
+        toast.error('Failed to delete link. Please try again.');
       }
     }
   };

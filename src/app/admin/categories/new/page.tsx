@@ -43,43 +43,42 @@ export default function CreateCategoryPage() {
     setSlug(generateSlug(newName));
   };
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    if (!name || !slug) {
-      setError('Name and Slug are required.');
-      setIsLoading(false);
-      return;
-    }
-
-    if (allCategories.some(cat => cat.slug === slug)) {
-      setError('This slug is already in use. Please choose a different name or manually adjust the slug.');
-      setIsLoading(false);
-      return;
-    }
-
-    const newCategory: Category = {
-      id: Date.now().toString(), 
-      name,
-      slug,
-      icon,
-      createdDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
     try {
-      const updatedCategories = [...allCategories, newCategory];
-      localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(updatedCategories));
-      setAllCategories(updatedCategories); 
+      // Create new category
+      const newCategory = {
+        name,
+        slug: slug || generateSlug(name),
+      };
 
-      setIsLoading(false);
-      alert('Category created successfully!'); 
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCategory),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        if (error.code === 'SLUG_EXISTS') {
+          setError('A category with this slug already exists');
+          return;
+        }
+        throw new Error('Failed to create category');
+      }
+
+      // Show success message and redirect
+      toast.success('Category created successfully!');
       router.push('/admin/categories');
-    } catch (e) {
-      setError('Failed to save category. Please try again.');
-      setIsLoading(false);
-      console.error("Failed to save category to localStorage", e);
+    } catch (error) {
+      console.error('Error creating category:', error);
+      setError('Failed to create category');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

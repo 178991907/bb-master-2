@@ -39,7 +39,7 @@ class PostgresAdapter implements DatabaseAdapter {
   private pool: Pool | null = null;
 
   async connect(): Promise<void> {
-    const databaseUrl = process.env.NEXT_PUBLIC_DATABASE_URL;
+    const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
       throw new Error('PostgreSQL Database URL is not configured.');
     }

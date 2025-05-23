@@ -1,13 +1,13 @@
 import { Client } from 'pg';
 
 async function testDatabaseConnection() {
-  const databaseUrl = process.env.NEXT_PUBLIC_DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL;
 
   console.log('Testing database connection...');
   console.log('Database URL obtained from environment:', databaseUrl);
 
   if (!databaseUrl) {
-    console.error('Error: NEXT_PUBLIC_DATABASE_URL environment variable is not set.');
+    console.error('Error: DATABASE_URL environment variable is not set.');
     return;
   }
 

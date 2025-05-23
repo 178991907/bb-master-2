@@ -1,0 +1,37 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  createdDate DateTime  @default(now())
+  icon        String?
+  links       Link[]    // Relation to Link model
+
+  @@map("categories")
+}
+
+model Link {
+  id          String    @id @default(uuid())
+  title       String
+  url         String
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdDate DateTime  @default(now())
+  imageUrl    String?
+  aiHint      String?
+  description String?
+  faviconUrl  String?
+
+  @@map("links")
+}

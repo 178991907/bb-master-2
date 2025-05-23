@@ -110,8 +110,8 @@ class PostgresAdapter implements DatabaseAdapter {
     if (!this.pool) throw new Error('Database not connected');
     const result = await this.pool.query<LinkItem>(
       'INSERT INTO links (title, url, "categoryId", "createdDate", "imageUrl", "aiHint", description, "faviconUrl") ' +
-      'VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [link.title, link.url, link.categoryId, link.createdDate, link.imageUrl, link.aiHint, link.description, link.faviconUrl]
+      'VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $4, $5, $6, $7) RETURNING *',
+      [link.title, link.url, link.categoryId, link.imageUrl, link.aiHint, link.description, link.faviconUrl]
     );
     return result.rows[0];
   }
